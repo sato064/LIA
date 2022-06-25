@@ -1,0 +1,48 @@
+from telnetlib import WILL
+from unittest import skip
+import MeCab
+from collections import defaultdict
+from nltk import ngrams
+
+file = r'neko.txt.mecab' #吾輩は猫である の形態素解析済みファイル読み込み
+sen = []
+cnts = []
+words = []
+with open(file) as f: #単語区切りのリスト作成
+    for line in f:
+        fields = line.split('\t')
+        if fields[0] == ''or fields[0] == '\n':
+            continue
+        elif fields[0] == 'EOS\n':
+            words.append("EOS")
+        elif fields[0] == '\u3000':
+            words.append("BOS")
+        else:
+            words.append(fields[0])
+f.close()
+
+print(words)
+bygrams = list(ngrams(words, 2)) #bygramのリスト作成
+list = defaultdict(int)
+
+for by in bygrams: #bygramの出現頻度計算
+    list[by] += 1
+list = sorted(list.items(), key=lambda x: x[1], reverse=True)
+
+ans = [] #WARNING! Order(n^2)での全検索 非常に時間がかかる
+for i in list:
+    sum = 0
+    for j in list :
+        if i[0][0] == j[0][0]: #bygramで，同じ文字から始まるものの識別
+            sum += j[1] #同じ文字で始まるならsumに個数を追加
+    p = i[1] / sum #条件付き確率の計算
+    ans.append([i[0],p])
+
+ans = sorted(ans, key=lambda x: x[1], reverse=True)
+print(ans)
+
+#外部ファイルへの書き出し(課題3で利用)
+with open('list.txt', 'w') as fw:
+    for d in ans:
+        fw.write("%s\n" % d)
+        
